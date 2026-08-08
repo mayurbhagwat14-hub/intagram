@@ -56,6 +56,16 @@ body {
   }
 }
 
+/* ===== Instagram Logo Image ===== */
+.logo-image {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  object-fit: cover;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 32px rgba(131, 58, 180, 0.35);
+}
+
 /* ===== Instagram Logo Icon ===== */
 .logo-icon {
   width: 64px;

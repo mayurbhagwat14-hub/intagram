@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { login } from '../api';
+import logoImg from '../assets/logo.jpg';
 
 const Login = ({ onSuccess, onSwitch }) => {
   const [username, setUsername] = useState('');
@@ -28,10 +29,8 @@ const Login = ({ onSuccess, onSwitch }) => {
 
   return (
     <div className="auth-card">
-      {/* Instagram Logo */}
-      <div className="logo-icon">
-        <span className="logo-dot"></span>
-      </div>
+      {/* Instagram Logo Image */}
+      <img src={logoImg} alt="Instagram Logo" className="logo-image" />
 
       {/* Brand Name */}
       <h1 className="brand-title">Instagram</h1>
