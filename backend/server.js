@@ -10,28 +10,33 @@ connectDB();
 
 const app = express();
 
-// CORS config — production mein sirf tumhara Vercel frontend allowed hoga
-const allowedOrigins = [
-  'http://localhost:3000',  // local Vite dev server
-  'http://localhost:5173',  // Vite default port
-];
+// CORS config
+const corsOptions = {
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
 
-// Agar FRONTEND_URL env variable set hai (Render pe set karna), toh usse bhi allow karo
 if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL);
-}
-
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
+  // Production: sirf allowed origins se requests aayengi
+  const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    'http://localhost:3000',
+    'http://localhost:5173',
+  ];
+  corsOptions.origin = function (origin, callback) {
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     return callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-}));
+  };
+} else {
+  // FRONTEND_URL set nahi hai toh sab allow (dev/testing)
+  corsOptions.origin = true;
+}
+
+app.use(cors(corsOptions));
 
 app.use(express.json());
 
