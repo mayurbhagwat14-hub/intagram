@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { register } from '../api';
-import logoImg from '../assets/logo.jpg';
+import logoImg from '../assets/250px-Instagram_logo_2016.svg.webp';
 
 const Register = ({ onSuccess, onSwitch }) => {
   const [username, setUsername] = useState('');
