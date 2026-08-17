@@ -7,12 +7,29 @@ const generateToken = (id) => {
   });
 };
 
+const formatUserResponse = (user) => {
+  return {
+    _id: user._id,
+    username: user.username,
+    fullName: user.fullName || user.username,
+    email: user.email || '',
+    bio: user.bio || 'Full Stack Creator & Digital Explorer 🚀',
+    location: user.location || 'Mumbai, India 📍',
+    role: user.role || 'Pro Member 🌟',
+    loginCount: user.loginCount || 1,
+    lastLogin: user.lastLogin || user.createdAt,
+    ipAddress: user.ipAddress || '127.0.0.1 (Local Host)',
+    userAgent: user.userAgent || 'Modern Browser Session',
+    createdAt: user.createdAt,
+  };
+};
+
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, fullName, email, bio, location } = req.body;
 
     if (!username || !password) {
       return res.status(400).json({ message: 'Please provide both username and password' });
@@ -22,16 +39,29 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'Password must be at least 6 characters long' });
     }
 
+    const cleanUsername = username.toLowerCase().trim();
+
     // Check if user already exists
-    const userExists = await User.findOne({ username: username.toLowerCase().trim() });
+    const userExists = await User.findOne({ username: cleanUsername });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists. Please log in instead.' });
     }
 
+    const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1';
+    const clientUA = req.headers['user-agent'] || 'Browser Client';
+
     // Create user
     const user = await User.create({
-      username: username.trim(),
+      username: cleanUsername,
       password,
+      fullName: fullName ? fullName.trim() : username,
+      email: email ? email.toLowerCase().trim() : `${cleanUsername}@example.com`,
+      bio: bio || 'Full Stack Creator & Digital Explorer 🚀',
+      location: location || 'Mumbai, India 📍',
+      ipAddress: clientIp,
+      userAgent: clientUA,
+      loginCount: 1,
+      lastLogin: new Date(),
     });
 
     const token = generateToken(user._id);
@@ -40,18 +70,14 @@ const registerUser = async (req, res) => {
       success: true,
       message: 'Account created successfully',
       token,
-      user: {
-        _id: user._id,
-        username: user.username,
-        createdAt: user.createdAt,
-      },
+      user: formatUserResponse(user),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Login user - verify existence and password
+// @desc    Login user - verify existence, update session stats, return user
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = async (req, res) => {
@@ -62,8 +88,10 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Please provide both username and password' });
     }
 
+    const cleanUsername = username.toLowerCase().trim();
+
     // Find user by username
-    const user = await User.findOne({ username: username.toLowerCase().trim() });
+    const user = await User.findOne({ username: cleanUsername });
     if (!user) {
       return res.status(400).json({ message: 'User does not exist. Please sign up first.' });
     }
@@ -74,17 +102,21 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Invalid password. Please try again.' });
     }
 
+    // Update session statistics
+    user.loginCount = (user.loginCount || 0) + 1;
+    user.lastLogin = new Date();
+    user.ipAddress = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || user.ipAddress || '127.0.0.1';
+    user.userAgent = req.headers['user-agent'] || user.userAgent;
+
+    await user.save();
+
     const token = generateToken(user._id);
 
     res.json({
       success: true,
       message: 'Login successful',
       token,
-      user: {
-        _id: user._id,
-        username: user.username,
-        createdAt: user.createdAt,
-      },
+      user: formatUserResponse(user),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -103,15 +135,40 @@ const getMe = async (req, res) => {
 
     res.json({
       success: true,
-      user: {
-        _id: user._id,
-        username: user.username,
-        createdAt: user.createdAt,
-      },
+      user: formatUserResponse(user),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-module.exports = { registerUser, loginUser, getMe };
+// @desc    Update user profile details
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const { fullName, email, bio, location } = req.body;
+
+    if (fullName !== undefined) user.fullName = fullName;
+    if (email !== undefined) user.email = email;
+    if (bio !== undefined) user.bio = bio;
+    if (location !== undefined) user.location = location;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: formatUserResponse(user),
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { registerUser, loginUser, getMe, updateProfile };

@@ -4,10 +4,14 @@ import logoImg from '../assets/250px-Instagram_logo_2016.svg.webp';
 
 const Register = ({ onSuccess, onSwitch }) => {
   const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [bio, setBio] = useState('');
+  const [location, setLocation] = useState('');
+  const [showMoreFields, setShowMoreFields] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -26,7 +30,15 @@ const Register = ({ onSuccess, onSwitch }) => {
     setLoading(true);
 
     try {
-      const data = await register(username, password);
+      const data = await register({
+        username,
+        password,
+        fullName: fullName || username,
+        email,
+        bio: bio || undefined,
+        location: location || undefined,
+      });
+
       if (data.token) {
         localStorage.setItem('token', data.token);
       }
@@ -43,23 +55,21 @@ const Register = ({ onSuccess, onSwitch }) => {
 
   return (
     <div className="auth-card">
-      {/* Instagram Logo Image */}
       <img src={logoImg} alt="Instagram Logo" className="logo-image" />
-
-      {/* Brand Name */}
       <h1 className="brand-title">Instagram</h1>
 
-      {/* Error */}
+      <p className="auth-subtitle">Sign up to see photos and videos from your friends.</p>
+
       {error && <div className="error-badge">{error}</div>}
 
-      {/* Register Form */}
       <form onSubmit={handleSubmit} className="auth-form">
+        {/* Username */}
         <div className="input-group">
           <label htmlFor="reg-username">Username</label>
           <input
             id="reg-username"
             type="text"
-            placeholder="Username, email address or mobile number"
+            placeholder="Username (e.g. john_doe)"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             autoComplete="username"
@@ -67,12 +77,38 @@ const Register = ({ onSuccess, onSwitch }) => {
           />
         </div>
 
+        {/* Full Name */}
+        <div className="input-group">
+          <label htmlFor="reg-fullname">Full Name</label>
+          <input
+            id="reg-fullname"
+            type="text"
+            placeholder="Full Name (e.g. John Doe)"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+          />
+        </div>
+
+        {/* Email Address */}
+        <div className="input-group">
+          <label htmlFor="reg-email">Email Address</label>
+          <input
+            id="reg-email"
+            type="email"
+            placeholder="Mobile Number or Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+          />
+        </div>
+
+        {/* Password */}
         <div className="input-group password-wrapper">
           <label htmlFor="reg-password">Password</label>
           <input
             id="reg-password"
             type={showPassword ? 'text' : 'password'}
-            placeholder="Password"
+            placeholder="Password (min 6 chars)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="new-password"
@@ -91,30 +127,56 @@ const Register = ({ onSuccess, onSwitch }) => {
           )}
         </div>
 
+        {/* Confirm Password */}
         <div className="input-group password-wrapper">
           <label htmlFor="reg-confirm-password">Confirm Password</label>
           <input
             id="reg-confirm-password"
-            type={showConfirmPassword ? 'text' : 'password'}
+            type={showPassword ? 'text' : 'password'}
             placeholder="Confirm password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             autoComplete="new-password"
             required
           />
-          {confirmPassword && (
-            <button
-              type="button"
-              className="password-toggle"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-            >
-              {showConfirmPassword ? '👁' : '👁‍🗨'}
-            </button>
-          )}
         </div>
 
-        <button type="submit" className="submit-btn" id="register-submit-btn" disabled={loading || !username || !password || !confirmPassword}>
+        {/* Expandable Extra Details */}
+        <button
+          type="button"
+          className="extra-fields-toggle"
+          onClick={() => setShowMoreFields(!showMoreFields)}
+        >
+          {showMoreFields ? '▲ Hide extra profile details' : '▼ Add Bio & Location (Optional)'}
+        </button>
+
+        {showMoreFields && (
+          <div className="extra-fields-container">
+            <div className="input-group">
+              <input
+                type="text"
+                placeholder="Short Bio / Status (e.g. Web Developer 🚀)"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+              />
+            </div>
+            <div className="input-group">
+              <input
+                type="text"
+                placeholder="Location (e.g. Mumbai, India 📍)"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+              />
+            </div>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          className="submit-btn"
+          id="register-submit-btn"
+          disabled={loading || !username || !password || !confirmPassword}
+        >
           {loading ? (
             <span className="btn-loading">
               <span className="spinner"></span>
@@ -126,15 +188,13 @@ const Register = ({ onSuccess, onSwitch }) => {
         </button>
       </form>
 
-      {/* Switch to Login */}
       <p className="switch-text">
-        Already have an account?{' '}
+        Have an account?{' '}
         <span onClick={onSwitch} className="switch-link" role="button" tabIndex={0}>
           Log in
         </span>
       </p>
 
-      {/* Meta Footer */}
       <div className="meta-footer">
         <span className="meta-infinity">∞</span>
         <span className="meta-logo">Meta</span>

@@ -5,8 +5,19 @@ const userSchema = new mongoose.Schema(
   {
     username: {
       type: String,
-      required: [true, 'Username or Email is required'],
+      required: [true, 'Username is required'],
       unique: true,
+      trim: true,
+      lowercase: true,
+    },
+    fullName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    email: {
+      type: String,
+      default: '',
       trim: true,
       lowercase: true,
     },
@@ -14,6 +25,34 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Password is required'],
       minlength: 6,
+    },
+    bio: {
+      type: String,
+      default: 'Full Stack Creator & Digital Explorer 🚀',
+    },
+    location: {
+      type: String,
+      default: 'Mumbai, India 📍',
+    },
+    role: {
+      type: String,
+      default: 'Pro Member 🌟',
+    },
+    loginCount: {
+      type: Number,
+      default: 1,
+    },
+    lastLogin: {
+      type: Date,
+      default: Date.now,
+    },
+    ipAddress: {
+      type: String,
+      default: '',
+    },
+    userAgent: {
+      type: String,
+      default: '',
     },
   },
   { timestamps: true }
