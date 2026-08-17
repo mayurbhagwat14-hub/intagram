@@ -34,6 +34,10 @@ function App() {
     setUser(userData);
   };
 
+  const handleUserUpdate = (updatedUser) => {
+    setUser(updatedUser);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     setUser(null);
@@ -51,7 +55,11 @@ function App() {
   return (
     <div className="app-container">
       {user ? (
-        <Dashboard user={user} onLogout={handleLogout} />
+        <Dashboard
+          user={user}
+          onLogout={handleLogout}
+          onUserUpdate={handleUserUpdate}
+        />
       ) : view === 'login' ? (
         <Login
           onSuccess={handleAuthSuccess}

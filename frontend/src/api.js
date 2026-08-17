@@ -22,15 +22,22 @@ export const login = async (username, password) => {
   return response.data;
 };
 
-export const register = async (userData) => {
-  // Can be object { username, password, fullName, email, bio, location } or legacy (username, password)
-  const payload = typeof userData === 'object' ? userData : { username: arguments[0], password: arguments[1] };
+export const register = async (userData, legacyPassword) => {
+  const payload =
+    typeof userData === 'object'
+      ? userData
+      : { username: userData, password: legacyPassword };
   const response = await api.post('/register', payload);
   return response.data;
 };
 
 export const getMe = async () => {
   const response = await api.get('/me');
+  return response.data;
+};
+
+export const getProfile = async () => {
+  const response = await api.get('/profile');
   return response.data;
 };
 

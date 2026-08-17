@@ -1,18 +1,61 @@
-import React, { useState } from 'react';
-import { updateProfile } from '../api';
+import React, { useState, useEffect } from 'react';
+import { getProfile, updateProfile } from '../api';
 
-const Dashboard = ({ user, onLogout }) => {
+const Dashboard = ({ user, onLogout, onUserUpdate }) => {
   const [currentUser, setCurrentUser] = useState(user);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'security' | 'session'
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
-    fullName: currentUser?.fullName || '',
-    email: currentUser?.email || '',
-    bio: currentUser?.bio || '',
-    location: currentUser?.location || '',
+    fullName: user?.fullName || '',
+    email: user?.email || '',
+    bio: user?.bio || '',
+    location: user?.location || '',
   });
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
+
+  // Fetch latest user details from GET API on mount
+  useEffect(() => {
+    const fetchLatestProfile = async () => {
+      try {
+        const data = await getProfile();
+        if (data?.user) {
+          setCurrentUser(data.user);
+          if (onUserUpdate) {
+            onUserUpdate(data.user);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch user profile via GET API', err);
+      }
+    };
+
+    fetchLatestProfile();
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      setEditForm({
+        fullName: currentUser.fullName || '',
+        email: currentUser.email || '',
+        bio: currentUser.bio || '',
+        location: currentUser.location || '',
+      });
+    }
+  }, [currentUser]);
+
+  const toggleEditing = () => {
+    if (!isEditing) {
+      setEditForm({
+        fullName: currentUser?.fullName || '',
+        email: currentUser?.email || '',
+        bio: currentUser?.bio || '',
+        location: currentUser?.location || '',
+      });
+      setSaveMsg('');
+    }
+    setIsEditing(!isEditing);
+  };
 
   const username = currentUser?.username || 'User';
   const fullName = currentUser?.fullName || username;
@@ -33,19 +76,32 @@ const Dashboard = ({ user, onLogout }) => {
       })
     : 'Active Now';
 
+  // Handle PUT API call & refetch via GET API
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     setSaveLoading(true);
     setSaveMsg('');
     try {
-      const data = await updateProfile(editForm);
-      if (data?.user) {
-        setCurrentUser(data.user);
-        setSaveMsg('Profile updated successfully!');
+      // 1. Call PUT API
+      const putRes = await updateProfile(editForm);
+      
+      // 2. Call GET API to re-verify latest database state
+      const getRes = await getProfile();
+      const updatedUser = getRes?.user || putRes?.user;
+
+      if (updatedUser) {
+        setCurrentUser(updatedUser);
+        if (onUserUpdate) {
+          onUserUpdate(updatedUser);
+        }
+        setSaveMsg('Profile updated & saved to Database! ✓');
         setIsEditing(false);
+      } else {
+        setSaveMsg('Failed to save changes.');
       }
     } catch (err) {
-      setSaveMsg('Failed to save changes.');
+      const msg = err.response?.data?.message || 'Failed to update profile. Please try again.';
+      setSaveMsg(msg);
     } finally {
       setSaveLoading(false);
     }
@@ -68,12 +124,16 @@ const Dashboard = ({ user, onLogout }) => {
         <p className="profile-username">@{username}</p>
 
         <div className="profile-badges">
-          <span className="badge-pill role-pill">{currentUser?.role || 'Pro Member 🌟'}</span>
-          <span className="badge-pill location-pill">{currentUser?.location || 'Location Not Set 📍'}</span>
+          <span className="badge-pill role-pill">{currentUser?.role || 'Member 🌟'}</span>
+          <span className="badge-pill location-pill">
+            {currentUser?.location ? currentUser.location : 'Location Not Set 📍'}
+          </span>
           <span className="badge-pill auth-pill">Verified Session ✓</span>
         </div>
 
-        <p className="profile-bio">"{currentUser?.bio || 'Full Stack Creator & Digital Explorer 🚀'}"</p>
+        <p className="profile-bio">
+          {currentUser?.bio ? `"${currentUser.bio}"` : 'No bio added yet. Click Edit Profile to add one!'}
+        </p>
       </div>
 
       {/* Stats Counter Grid */}
@@ -96,13 +156,13 @@ const Dashboard = ({ user, onLogout }) => {
         </div>
       </div>
 
-      {/* Save Notification */}
+      {/* Save Notification Toast */}
       {saveMsg && <div className="save-toast">{saveMsg}</div>}
 
-      {/* Profile Edit Inline Form */}
+      {/* Profile Edit Form */}
       {isEditing ? (
         <form onSubmit={handleEditSubmit} className="edit-profile-card">
-          <h3>Edit Profile Details</h3>
+          <h3>Edit Profile Details (PUT /api/auth/profile)</h3>
           <div className="edit-grid">
             <div className="edit-field">
               <label>Full Name</label>
@@ -110,6 +170,7 @@ const Dashboard = ({ user, onLogout }) => {
                 type="text"
                 value={editForm.fullName}
                 onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                placeholder="Full Name (e.g. Mayur Bhagwat)"
               />
             </div>
             <div className="edit-field">
@@ -118,6 +179,7 @@ const Dashboard = ({ user, onLogout }) => {
                 type="email"
                 value={editForm.email}
                 onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                placeholder="Email Address"
               />
             </div>
             <div className="edit-field full-width">
@@ -126,6 +188,7 @@ const Dashboard = ({ user, onLogout }) => {
                 type="text"
                 value={editForm.bio}
                 onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                placeholder="Short bio / status"
               />
             </div>
             <div className="edit-field full-width">
@@ -134,6 +197,7 @@ const Dashboard = ({ user, onLogout }) => {
                 type="text"
                 value={editForm.location}
                 onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                placeholder="City, Country (e.g. Mumbai, India 📍)"
               />
             </div>
           </div>
@@ -142,7 +206,7 @@ const Dashboard = ({ user, onLogout }) => {
               Cancel
             </button>
             <button type="submit" className="btn-primary" disabled={saveLoading}>
-              {saveLoading ? 'Saving...' : 'Save Profile'}
+              {saveLoading ? 'Updating...' : 'Save & Sync Profile'}
             </button>
           </div>
         </form>
@@ -184,11 +248,11 @@ const Dashboard = ({ user, onLogout }) => {
             </div>
             <div className="detail-row">
               <span className="detail-key">Email</span>
-              <span className="detail-val">{currentUser?.email || 'Not provided'}</span>
+              <span className="detail-val">{currentUser?.email ? currentUser.email : 'Not set'}</span>
             </div>
             <div className="detail-row">
               <span className="detail-key">Location</span>
-              <span className="detail-val">{currentUser?.location || 'Mumbai, India 📍'}</span>
+              <span className="detail-val">{currentUser?.location ? currentUser.location : 'Not set'}</span>
             </div>
             <div className="detail-row">
               <span className="detail-key">Member Since</span>
@@ -251,7 +315,7 @@ const Dashboard = ({ user, onLogout }) => {
       {/* Action Footer */}
       <div className="profile-actions">
         <button
-          onClick={() => setIsEditing(!isEditing)}
+          onClick={toggleEditing}
           className="action-btn edit-btn"
         >
           {isEditing ? 'Close Editor' : '✏️ Edit Profile'}
