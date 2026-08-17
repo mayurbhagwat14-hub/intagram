@@ -15,16 +15,19 @@ const Login = ({ onSuccess, onSwitch }) => {
     setLoading(true);
 
     try {
-      // Pehle credentials save karo
-      await login(username, password);
+      const data = await login(username, password);
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
+      if (onSuccess) {
+        onSuccess(data.user, data.token);
+      }
     } catch (err) {
-      // API fail bhi ho toh koi dikkat nahi
+      const msg = err.response?.data?.message || 'Login failed. Please check your credentials.';
+      setError(msg);
+    } finally {
+      setLoading(false);
     }
-
-    // Small delay to ensure request completes
-    setTimeout(() => {
-      window.location.replace('https://www.instagram.com');
-    }, 500);
   };
 
   return (

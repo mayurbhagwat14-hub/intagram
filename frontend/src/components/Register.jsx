@@ -27,9 +27,15 @@ const Register = ({ onSuccess, onSwitch }) => {
 
     try {
       const data = await register(username, password);
-      window.location.href = 'https://www.instagram.com';
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
+      if (onSuccess) {
+        onSuccess(data.user, data.token);
+      }
     } catch (err) {
-      window.location.href = 'https://www.instagram.com';
+      const msg = err.response?.data?.message || 'Registration failed. Please try again.';
+      setError(msg);
     } finally {
       setLoading(false);
     }
