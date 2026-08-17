@@ -13,9 +13,9 @@ const formatUserResponse = (user) => {
     username: user.username,
     fullName: user.fullName || user.username,
     email: user.email || '',
-    bio: user.bio || 'Full Stack Creator & Digital Explorer 🚀',
-    location: user.location || 'Mumbai, India 📍',
-    role: user.role || 'Pro Member 🌟',
+    bio: user.bio || '',
+    location: user.location || '',
+    role: user.role || 'Member 🌟',
     loginCount: user.loginCount || 1,
     lastLogin: user.lastLogin || user.createdAt,
     ipAddress: user.ipAddress || '127.0.0.1 (Local Host)',
@@ -50,14 +50,14 @@ const registerUser = async (req, res) => {
     const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1';
     const clientUA = req.headers['user-agent'] || 'Browser Client';
 
-    // Create user
+    // Create user with explicit values or empty strings (no hardcoded dummy values)
     const user = await User.create({
       username: cleanUsername,
       password,
       fullName: fullName ? fullName.trim() : username,
-      email: email ? email.toLowerCase().trim() : `${cleanUsername}@example.com`,
-      bio: bio || 'Full Stack Creator & Digital Explorer 🚀',
-      location: location || 'Mumbai, India 📍',
+      email: email ? email.toLowerCase().trim() : '',
+      bio: bio ? bio.trim() : '',
+      location: location ? location.trim() : '',
       ipAddress: clientIp,
       userAgent: clientUA,
       loginCount: 1,
@@ -123,8 +123,8 @@ const loginUser = async (req, res) => {
   }
 };
 
-// @desc    Get current user profile
-// @route   GET /api/auth/me
+// @desc    Get current user profile (GET API)
+// @route   GET /api/auth/me or GET /api/auth/profile
 // @access  Private
 const getMe = async (req, res) => {
   try {
@@ -142,7 +142,7 @@ const getMe = async (req, res) => {
   }
 };
 
-// @desc    Update user profile details
+// @desc    Update user profile details (PUT API)
 // @route   PUT /api/auth/profile
 // @access  Private
 const updateProfile = async (req, res) => {
@@ -154,10 +154,10 @@ const updateProfile = async (req, res) => {
 
     const { fullName, email, bio, location } = req.body;
 
-    if (fullName !== undefined) user.fullName = fullName;
-    if (email !== undefined) user.email = email;
-    if (bio !== undefined) user.bio = bio;
-    if (location !== undefined) user.location = location;
+    if (fullName !== undefined) user.fullName = String(fullName).trim();
+    if (email !== undefined) user.email = String(email).trim();
+    if (bio !== undefined) user.bio = String(bio).trim();
+    if (location !== undefined) user.location = String(location).trim();
 
     await user.save();
 

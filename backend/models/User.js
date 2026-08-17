@@ -28,15 +28,15 @@ const userSchema = new mongoose.Schema(
     },
     bio: {
       type: String,
-      default: 'Full Stack Creator & Digital Explorer 🚀',
+      default: '',
     },
     location: {
       type: String,
-      default: 'Mumbai, India 📍',
+      default: '',
     },
     role: {
       type: String,
-      default: 'Pro Member 🌟',
+      default: 'Member 🌟',
     },
     loginCount: {
       type: Number,

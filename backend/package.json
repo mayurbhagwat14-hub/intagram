@@ -4,8 +4,8 @@
   "description": "Secure MERN Auth Backend",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node api.js && node server.js",
+    "dev": "node api.js && node --watch server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
